@@ -1,6 +1,6 @@
 # Classificação de Galáxias
 
-Pipeline para a classificação de galáxias do tipo "Barred Spiral" e "Round Smooth"
+Pipeline para a classificação de galáxias do tipo "Round Smooth" e "Barred Spiral".
 
 ## Pré-processamento de dados
 

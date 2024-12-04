@@ -1,7 +1,7 @@
 Galaxy10_DECals.h5
 .venv/
 draft.py
-
+mypy.ini
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
