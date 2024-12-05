@@ -4,11 +4,12 @@ import numpy as np
 # import albumentations as A
 
 
-class DataSet:
+class Galaxies:
     def __init__(self,
                  path: str,
                  transform: Optional[Callable],
                  gray: Optional[Callable] = None,
+                 classes: list[int] = [2, 5]
                  ) -> None:
         """Classe que representa o dataset de imagens de galáxias.
 
@@ -20,20 +21,38 @@ class DataSet:
         self.__path = path
         self.__transform = transform
         self.__gray = gray
+        self.__classes = classes
+        self.__saved_path = "data/Binary_2_5_dataset.h5"
+        self.__saved = False
 
-        with h5py.File(self.__path, 'r') as f:
-            self.imgs = f['images'][:]
-            self.labels = f['ans'][:]
-            all_labels = f['ans']
-            # Apenas as classes 2 e 5 são consideradas
-            selected_indices = np.where(
-                (all_labels[:] == 2) | (all_labels[:] == 5)
-            )[0]
+        try:
+            with h5py.File(self.__saved_path, 'r') as f:
+                self.__imgs = f['images'][:]
+                self.__labels = f['labels'][:]
+                self.__saved = True
+        except FileNotFoundError:
+            self.__saved = False
 
-            self.__imgs = f['images'][selected_indices]
+        if not self.__saved:
+            with h5py.File(self.__path, 'r') as f:
+                self.imgs = f['images'][:]
+                self.labels = f['ans'][:]
+                all_labels = f['ans']
+                selected_indices = np.where(
+                    (all_labels[:] == self.__classes[0]) |
+                    (all_labels[:] == self.__classes[1])
+                )[0]
 
-            # Reencodar os rótulos: 2 -> 0 e 5 -> 1
-            self.__labels = np.where(all_labels[selected_indices] == 2, 0, 1)
+                self.__imgs = f['images'][selected_indices]
+
+                # Reencodar os rótulos: 2 -> 0 e 5 -> 1
+                self.__labels = np.where(
+                    all_labels[selected_indices] == 2, 0, 1
+                )
+
+            with h5py.File(self.__saved_path, 'w') as f:
+                f.create_dataset('images', data=self.__imgs)
+                f.create_dataset('labels', data=self.__labels)
 
     def __len__(self) -> int:
         """Retorna o tamanho do dataset.
@@ -47,7 +66,7 @@ class DataSet:
         """
         Retorna uma tupla contendo a imagem e o rótulo no índice fornecido.
         """
-        if idx < 0 or idx >= len(self):
+        if idx >= len(self):
             raise IndexError('Index out of range')
 
         img = self.__imgs[idx]
@@ -97,7 +116,7 @@ class DataLoader:
     def __get_dataloader(self,
                          split_and_size: dict[str, int],
                          seed: int = 0
-                         ) -> DataSet:
+                         ) -> Galaxies:
         """Obtém o dataset para cada subconjunto e seu tamanho.
 
         Args:
@@ -109,13 +128,11 @@ class DataLoader:
         """
         split = list(split_and_size.keys())[0]
         print(split)
-        return DataSet(path=self.__path,
-                       transform=None,
-                       gray=None)
+        return Galaxies(path=self.__path, transform=None, gray=None)
 
     def split(self,
               sizes: tuple[int, int, int]
-              ) -> tuple[DataSet, DataSet, DataSet]:
+              ) -> tuple[Galaxies, Galaxies, Galaxies]:
         """Realiza a divisão do dataset em conjuntos de treino,
         validação e teste
 
@@ -133,16 +150,3 @@ class DataLoader:
         val = self.__get_dataloader({'val': sizes[1]}, seed=self.__seed)
         test = self.__get_dataloader({'test': sizes[2]}, seed=self.__seed)
         return train, val, test
-
-
-if __name__ == '__main__':
-    dataset = DataSet(
-        path="Galaxy10_DECals.h5",
-        transform=None,
-        gray=None)
-
-    print(f"Tamanho do dataset: {len(dataset)}")
-
-    img, label = dataset[0]
-    print("Imagem shape:", img.shape)
-    print("Label:", label)

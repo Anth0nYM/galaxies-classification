@@ -33,4 +33,6 @@ def check_file(file_path: str) -> bool:
         print('Verifique o arquivo baixado')
         print(f'Hash esperado: {expected}')
         print(f'Hash calculado: {calculated_hash}')
+    else:
+        print('Arquivo válido!')
     return acepted
