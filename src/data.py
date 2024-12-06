@@ -100,6 +100,18 @@ class DataLoader:
         self.__img_size = img_size
         self.__seed = seed
 
+    def __gray(self) -> Callable:
+        ''' Converte a imagem para escala de cinza.
+
+        Returns:
+            Callable: Função que converte a imagem para escala de cinza.
+        '''
+        return lambda img: (
+            0.2126 * img[..., 0] +
+            0.7152 * img[..., 1] +
+            0.0722 * img[..., 2]
+        ).astype(np.uint8)
+
     def __compose(self,
                   split: str
                   ) -> Callable:
