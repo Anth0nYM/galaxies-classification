@@ -1,6 +1,8 @@
+from random import shuffle
 from typing import Optional, Callable
 import h5py
 import numpy as np
+from torch.utils.data import Dataset, DataLoader, Subset
 # import albumentations as A
 
 
@@ -81,7 +83,7 @@ class Galaxies:
         return img, label
 
 
-class DataLoader:
+class GalaxiesDataLoader:
     def __init__(self,
                  path: str,
                  batch_size: int,
@@ -101,7 +103,7 @@ class DataLoader:
         self.__seed = seed
 
     def __gray(self) -> Callable:
-        ''' Converte a imagem para escala de cinza.
+        ''' Converte a imagem para escala de cinza usando a função luma.
 
         Returns:
             Callable: Função que converte a imagem para escala de cinza.
@@ -123,24 +125,7 @@ class DataLoader:
         Returns:
             Callable: Função que aplica as transformações e aumentos.
         '''
-        return max
-
-    def __get_dataloader(self,
-                         split_and_size: dict[str, int],
-                         seed: int = 0
-                         ) -> Galaxies:
-        """Obtém o dataset para cada subconjunto e seu tamanho.
-
-        Args:
-            split_and_size (dict[str, int]): Nome de cada conjunto
-            e seu tamanho.
-
-        Returns:
-            DataSet: O DataLoader criado.
-        """
-        split = list(split_and_size.keys())[0]
-        print(split)
-        return Galaxies(path=self.__path, transform=None, gray=None)
+        return
 
     def split(self,
               sizes: tuple[int, int, int]
@@ -156,9 +141,4 @@ class DataLoader:
             tuple[DataSet, DataSet, DataSet]: Conjuntos de treino,
             validação e teste.
         """
-        assert len(sizes) == 3
-        assert 100 == sum(sizes)
-        train = self.__get_dataloader({'train': sizes[0]}, seed=self.__seed)
-        val = self.__get_dataloader({'val': sizes[1]}, seed=self.__seed)
-        test = self.__get_dataloader({'test': sizes[2]}, seed=self.__seed)
-        return train, val, test
+        return

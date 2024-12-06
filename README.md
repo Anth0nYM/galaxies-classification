@@ -2,17 +2,20 @@
 
 ## How to Run
 
-1. [ ] **Download the Dataset:**  
+1. ⬇️**Download the Dataset:**  
    Download the dataset file from [Galaxy10 Dataset](https://github.com/henrysky/Galaxy10).
 
-2. [ ] **Set Up the Project:**  
-   Create a folder named `data/` at the root of the project and move the downloaded file into this folder.
+2. ⬇️**Install Dependencies:**
+   Install the project dependencies using the following command: `pip install -r requirements.txt`. Most dependencies will be installed automatically. However, [PyTorch](https://pytorch.org/) installation depends on your hardware configuration (GPU/CPU). It is recommended to install PyTorch directly from the [official website](https://pytorch.org/get-started/locally/), following the specific instructions for your environment.
 
-3. [ ] **First Execution:**  
-   During the first run, a subset of the original dataset will be created, containing only the "Round Smooth" and "Barred Spiral" classes. This subset will be saved as a new file inside the `data/` folder. This process might take some time depending on your hardware.
+3. ⚙️**Configure the Project:**
+   - Create a folder named `data/` in the project root directory and move the downloaded file into this folder.
 
-4. [ ] **Future Executions:**  
-   After the first run, data will be loaded directly from the newly created file, improving processing efficiency.
+   - On the first execution, a subset of the original dataset containing only the "Round Smooth" and "Barred Spiral" classes will be generated. This subset will be saved as a new file within the `data/` folder.
+
+   > **Nota:** This process might take some time, depending on your hardware capabilities.
+
+   - After the initial execution, the data will be loaded directly from the newly created file, significantly reducing processing time in subsequent runs.
 
 ---
 
@@ -56,17 +59,19 @@ This project implements a pipeline to classify galaxies into two categories:
 
 ## Como executar
 
-1. [ ] **Baixe o Dataset:**  
-   Faça o download do arquivo do dataset em [Galaxy10 Dataset](https://github.com/henrysky/Galaxy10).
+1. ⬇️**Baixe o Dataset:**  
+   Faça o download do arquivo do dataset [Galaxy10 Dataset](https://github.com/henrysky/Galaxy10).
 
-2. [ ] **Configure o Projeto:**  
-   Crie uma pasta chamada `data/` na raiz do projeto e mova o arquivo baixado para essa pasta.
+2. ⬇️**Instale as dependências:**  
+   Instale as dependências do projeto utilizando o comando: `pip install -r requirements.txt`, a maioria das dependências será instalada automaticamente. No entanto, a instalação do [PyTorch](https://pytorch.org/) depende da sua configuração de hardware (GPU/CPU). Recomenda-se instalá-lo diretamente do [site oficial](https://pytorch.org/get-started/locally/), seguindo as instruções específicas para o seu ambiente.
 
-3. [ ] **Primeira Execução:**  
-   Na primeira execução, será criado um subconjunto do dataset original contendo apenas as classes "Round Smooth" e "Barred Spiral". Esse subconjunto será salvo em um novo arquivo dentro da pasta `data/`. Este processo pode levar algum tempo, dependendo do hardware disponível.
+3. ⚙️**Configure o Projeto:**  
+   - Crie uma pasta chamada `data/` na raiz do projeto e mova o arquivo baixado para essa pasta.
+   - Na primeira execução, será criado um subconjunto do dataset original contendo apenas as classes "Round Smooth" e "Barred Spiral". Esse subconjunto será salvo em um novo arquivo dentro da pasta `data/`
 
-4. [ ] **Execuções Futuras:**  
-   Após a primeira execução, os dados serão carregados diretamente do arquivo criado, otimizando o tempo de processamento.
+   > **Nota:** Esse processo pode levar algum tempo, dependendo da capacidade do hardware disponível.
+
+   - Após a execução inicial, os dados serão carregados diretamente do arquivo recém-criado, reduzindo o tempo de processamento nas execuções subsequentes.
 
 ---
 
@@ -79,14 +84,14 @@ Este projeto implementa um pipeline para classificação de galáxias em duas ca
 
 ### Etapas de Pré-processamento de Dados
 
-- [ ] Conversão de imagens para escala de cinza.
-- [ ] Aplicação de filtros para remoção de ruído (mediana, média, máximo, mínimo).
-- [ ] Aumento de dados (alterações de luminosidade, transformações espaciais, entre outros).
+- Conversão de imagens para escala de cinza.
+- Aplicação de filtros para remoção de ruído (mediana, média, máximo, mínimo).
+- Aumento de dados (alterações de luminosidade, transformações espaciais, entre outros).
 
 ### Hipóteses
 
-- [ ] O modelo CNN escolhido deve superar o desempenho do modelo apresentado no artigo base.
-- [ ] A aplicação de filtros de remoção de ruído e aumento de dados deve melhorar os resultados.
+- O modelo CNN escolhido deve superar o desempenho do modelo apresentado no artigo base.
+- A aplicação de filtros de remoção de ruído e aumento de dados deve melhorar os resultados.
 
 ### Métricas Utilizadas
 
@@ -97,10 +102,10 @@ Este projeto implementa um pipeline para classificação de galáxias em duas ca
 
 ### Experimentos
 
-- [ ] Comparação binária entre modelos de cores: **RGB vs Grayscale**.
-- [ ] Avaliação do impacto dos filtros escolhidos (com ou sem filtro).
-- [ ] Comparação entre o modelo do artigo base e o modelo proposto.
-- [ ] Ajuste de hiperparâmetros, incluindo:
+- Comparação binária entre modelos de cores: **RGB vs Grayscale**.
+- Avaliação do impacto dos filtros escolhidos (com ou sem filtro).
+- Comparação entre o modelo do artigo base e o modelo proposto.
+- Ajuste de hiperparâmetros, incluindo:
   - Número de épocas.
   - Taxa de aprendizado.
   - Funções de ativação.
