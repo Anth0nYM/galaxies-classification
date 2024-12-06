@@ -13,7 +13,7 @@
 
    - On the first execution, a subset of the original dataset containing only the "Round Smooth" and "Barred Spiral" classes will be generated. This subset will be saved as a new file within the `data/` folder.
 
-   > **Nota:** This process might take some time, depending on your hardware capabilities.
+   > **Note:** This process might take some time, depending on your hardware capabilities.
 
    - After the initial execution, the data will be loaded directly from the newly created file, significantly reducing processing time in subsequent runs.
 
@@ -28,14 +28,14 @@ This project implements a pipeline to classify galaxies into two categories:
 
 ### Data Preprocessing Steps
 
-- [ ] Convert images to grayscale.
-- [ ] Apply noise removal filters (median, mean, max, min).
-- [ ] Perform data augmentation (brightness adjustments, spatial transformations, etc.).
+- Convert images to grayscale.
+- Apply noise removal filters (median, mean, max, min).
+- Perform data augmentation (brightness adjustments, spatial transformations, etc.).
 
 ### Hypotheses
 
-- [ ] The chosen CNN model is expected to outperform the baseline model presented in the original article.
-- [ ] Applying noise removal filters and data augmentation will enhance performance.
+- The chosen CNN model is expected to outperform the baseline model presented in the original article.
+- Applying noise removal filters and data augmentation will enhance performance.
 
 ### Evaluation Metrics
 
@@ -46,10 +46,10 @@ This project implements a pipeline to classify galaxies into two categories:
 
 ### Experiments
 
-- [ ] Binary evaluation of color models: **RGB vs Grayscale**.
-- [ ] Binary evaluation of the impact of selected filters (with or without filter).
-- [ ] Comparison between the baseline model and the proposed model.
-- [ ] Hyperparameter tuning, including:
+- Binary evaluation of color models: **RGB vs Grayscale**.
+- Binary evaluation of the impact of selected filters (with or without filter).
+- Comparison between the baseline model and the proposed model.
+- Hyperparameter tuning, including:
   - Number of epochs.
   - Learning rate.
   - Activation functions.
