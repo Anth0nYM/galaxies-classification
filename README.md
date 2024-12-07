@@ -11,15 +11,6 @@
 3. ⚙️**Configure the Project:**
    - Create a folder named `data/` in the project root directory and move the downloaded file into this folder.
 
-<<<<<<< HEAD
-=======
-   - On the first execution, a subset of the original dataset containing only the "Round Smooth" and "Barred Spiral" classes will be generated. This subset will be saved as a new file within the `data/` folder.
-
-   > **Note:** This process might take some time, depending on your hardware capabilities.
-
-   - After the initial execution, the data will be loaded directly from the newly created file, significantly reducing processing time in subsequent runs.
-
->>>>>>> 8c67b10f5ac511e0efb469fe717c59f40b69d911
 ---
 
 ## Task Overview
@@ -49,10 +40,6 @@ This project implements a pipeline to classify galaxies into two categories:
 
 ### Experiments
 
-<<<<<<< HEAD
-=======
-- Binary evaluation of color models: **RGB vs Grayscale**.
->>>>>>> 8c67b10f5ac511e0efb469fe717c59f40b69d911
 - Binary evaluation of the impact of selected filters (with or without filter).
 - Comparison between the baseline model and the proposed model.
 - Hyperparameter tuning, including:
