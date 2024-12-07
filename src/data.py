@@ -1,17 +1,16 @@
-from random import shuffle
 from typing import Optional, Callable
 import h5py
-import numpy as np
-from torch.utils.data import Dataset, DataLoader, Subset
-# import albumentations as A
+from torch.utils.data import Dataset, DataLoader, random_split
+import torch
+import src.gray as gray
 
 
-class Galaxies:
+class Galaxies(Dataset):
     def __init__(self,
                  path: str,
-                 transform: Optional[Callable],
                  gray: Optional[Callable] = None,
-                 classes: list[int] = [2, 5]
+                 denoise: Optional[Callable] = None,
+                 transform: Optional[Callable] = None,
                  ) -> None:
         """Classe que representa o dataset de imagens de galáxias.
 
@@ -21,40 +20,16 @@ class Galaxies:
             gray (Optional[Callable], optional): Função de conversão para cinza
         """
         self.__path = path
-        self.__transform = transform
         self.__gray = gray
-        self.__classes = classes
-        self.__saved_path = "data/Binary_2_5_dataset.h5"
-        self.__saved = False
+        self.__denoise = denoise
+        self.__transform = transform
 
         try:
-            with h5py.File(self.__saved_path, 'r') as f:
+            with h5py.File(self.__path, 'r') as f:
                 self.__imgs = f['images'][:]
                 self.__labels = f['labels'][:]
-                self.__saved = True
         except FileNotFoundError:
-            self.__saved = False
-
-        if not self.__saved:
-            with h5py.File(self.__path, 'r') as f:
-                self.imgs = f['images'][:]
-                self.labels = f['ans'][:]
-                all_labels = f['ans']
-                selected_indices = np.where(
-                    (all_labels[:] == self.__classes[0]) |
-                    (all_labels[:] == self.__classes[1])
-                )[0]
-
-                self.__imgs = f['images'][selected_indices]
-
-                # Reencodar os rótulos: 2 -> 0 e 5 -> 1
-                self.__labels = np.where(
-                    all_labels[selected_indices] == 2, 0, 1
-                )
-
-            with h5py.File(self.__saved_path, 'w') as f:
-                f.create_dataset('images', data=self.__imgs)
-                f.create_dataset('labels', data=self.__labels)
+            raise FileNotFoundError('Missing dataset')
 
     def __len__(self) -> int:
         """Retorna o tamanho do dataset.
@@ -77,6 +52,9 @@ class Galaxies:
         if self.__gray:
             img = self.__gray(img)
 
+        if self.__denoise:
+            img = self.__denoise(img)
+
         if self.__transform:
             img = self.__transform(img)
 
@@ -87,36 +65,27 @@ class GalaxiesDataLoader:
     def __init__(self,
                  path: str,
                  batch_size: int,
-                 subset_size: Optional[int],
-                 as_gray: int,
+                 as_gray: bool,
                  augment: bool,
+                 denoise: Optional[Callable] = None,
                  img_size: tuple[int, int] = (256, 256),
                  seed: int = 0
                  ) -> None:
 
         self.__path = path
         self.__batch_size = batch_size
-        self.__subset_size = subset_size
-        self.__as_gray = as_gray
+        self.__gray = gray.luma() if as_gray else None
+        self.__denoise = denoise
         self.__augment = augment
         self.__img_size = img_size
         self.__seed = seed
 
-    def __gray(self) -> Callable:
-        ''' Converte a imagem para escala de cinza usando a função luma.
+    def is_gray(self) -> bool:
+        return self.__gray is not None
 
-        Returns:
-            Callable: Função que converte a imagem para escala de cinza.
-        '''
-        return lambda img: (
-            0.2126 * img[..., 0] +
-            0.7152 * img[..., 1] +
-            0.0722 * img[..., 2]
-        ).astype(np.uint8)
+    # TODO: Compose
 
-    def __compose(self,
-                  split: str
-                  ) -> Callable:
+    def __compose(self) -> None:
         ''' Aplica transformações e aumentos nas imagens.
 
         Args:
@@ -125,20 +94,56 @@ class GalaxiesDataLoader:
         Returns:
             Callable: Função que aplica as transformações e aumentos.
         '''
-        return
+        return None
 
     def split(self,
               sizes: tuple[int, int, int]
-              ) -> tuple[Galaxies, Galaxies, Galaxies]:
-        """Realiza a divisão do dataset em conjuntos de treino,
-        validação e teste
+              ) -> tuple[DataLoader, DataLoader, DataLoader]:
+        """
+        Realiza a divisão do dataset em conjuntos de treino, validação e teste.
 
         Args:
-            sizes (tuple[int, int, int]): Percentagem (arredondada) do tamanho
-            de cada subconjunto em relação ao original.
+            sizes (tuple[int, int, int]): Percentagem do tamanho de cada
+            subconjunto (treinamento, validação, teste).
 
         Returns:
-            tuple[DataSet, DataSet, DataSet]: Conjuntos de treino,
+            tuple[DataLoader, DataLoader, DataLoader]: Conjuntos de treino,
             validação e teste.
         """
-        return
+        if sum(sizes) != 100:
+            raise ValueError('A soma das porcentagens deve ser 100')
+
+        dataset = Galaxies(path=self.__path,
+                           gray=self.__gray,
+                           denoise=self.__denoise,
+                           transform=None)
+
+        n = len(dataset)
+        train_size = int(n * sizes[0] / 100)
+        val_size = int(n * sizes[1] / 100)
+        test_size = n - train_size - val_size
+
+        generator = torch.Generator()
+        generator.manual_seed(self.__seed)
+
+        train_dataset, val_dataset, test_dataset = random_split(
+            dataset=dataset,
+            lengths=[train_size, val_size, test_size],
+            generator=generator)
+
+        train_loader = DataLoader(
+            dataset=train_dataset,
+            batch_size=self.__batch_size,
+            shuffle=True)
+
+        val_loader = DataLoader(
+            dataset=val_dataset,
+            batch_size=self.__batch_size,
+            shuffle=False)
+
+        test_loader = DataLoader(
+            dataset=test_dataset,
+            batch_size=self.__batch_size,
+            shuffle=False)
+
+        return train_loader, val_loader, test_loader

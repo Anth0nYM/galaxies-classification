@@ -2,6 +2,7 @@ data/
 .venv/
 draft.py
 mypy.ini
+view.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
