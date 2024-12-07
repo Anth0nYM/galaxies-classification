@@ -15,9 +15,11 @@ class Galaxies(Dataset):
         """Classe que representa o dataset de imagens de galáxias.
 
         Args:
-            path (str): Caminho para o arquivo base do dataset
-            transform (Optional[Callable]): Função que aplica transformações
-            gray (Optional[Callable], optional): Função de conversão para cinza
+            path (``str``): Caminho para o arquivo base do dataset.
+            transform (``Optional[Callable]``): Função que aplica
+            transformações.
+            gray (``Optional[Callable]``, optional): Função de conversão para
+            cinza
         """
         self.__path = path
         self.__gray = gray
@@ -32,17 +34,9 @@ class Galaxies(Dataset):
             raise FileNotFoundError('Missing dataset')
 
     def __len__(self) -> int:
-        """Retorna o tamanho do dataset.
-
-        Returns:
-            int: Tamanho (em quantidade de imagens) do dataset.
-        """
         return len(self.__imgs)
 
     def __getitem__(self, idx: int) -> tuple:
-        """
-        Retorna uma tupla contendo a imagem e o rótulo no índice fornecido.
-        """
         if idx >= len(self):
             raise IndexError('Index out of range')
 
@@ -71,7 +65,22 @@ class GalaxiesDataLoader:
                  img_size: tuple[int, int] = (256, 256),
                  seed: int = 0
                  ) -> None:
+        """Classe responsável por carregar e dividir o dataset de galáxias em
+        conjuntos de treino, validação e teste.
 
+        Args:
+            path (``str``): Caminho para o arquivo base do dataset.
+            batch_size (``int``): Tamanho do lote (batch) para o DataLoader.
+            as_gray (``bool``): Se True, converte as imagens para escala de
+            cinza.
+            augment (``bool``): Se True, aplica aumentos nas imagens.
+            denoise (``Optional[Callable]``, optional): Função para aplicar
+            remoção de ruído nas imagens.
+            img_size (``tuple[int, int]``, optional): Tamanho das imagens.
+                Defaults to (``256``, ``256``).
+            seed (``int``, optional): Semente para geração de números
+            aleatórios. Defaults to ``0``.
+        """
         self.__path = path
         self.__batch_size = batch_size
         self.__gray = gray.luma() if as_gray else None
@@ -79,20 +88,12 @@ class GalaxiesDataLoader:
         self.__augment = augment
         self.__img_size = img_size
         self.__seed = seed
-
-    def is_gray(self) -> bool:
-        return self.__gray is not None
-
-    # TODO: Compose
+        self.is_gray = True if as_gray else False
+        self.is_denoised = True if denoise else False
+        self.is_augmented = True if augment else False
 
     def __compose(self) -> None:
         ''' Aplica transformações e aumentos nas imagens.
-
-        Args:
-            split (str): Qual conjunto de dados está sendo transformado.
-
-        Returns:
-            Callable: Função que aplica as transformações e aumentos.
         '''
         return None
 
@@ -103,11 +104,11 @@ class GalaxiesDataLoader:
         Realiza a divisão do dataset em conjuntos de treino, validação e teste.
 
         Args:
-            sizes (tuple[int, int, int]): Percentagem do tamanho de cada
+            sizes (``tuple[int, int, int]``): Percentagem do tamanho de cada
             subconjunto (treinamento, validação, teste).
 
         Returns:
-            tuple[DataLoader, DataLoader, DataLoader]: Conjuntos de treino,
+            ``tuple[DataLoader, DataLoader, DataLoader]``: Conjuntos de treino,
             validação e teste.
         """
         if sum(sizes) != 100:
