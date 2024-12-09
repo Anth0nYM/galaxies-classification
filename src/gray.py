@@ -2,6 +2,7 @@ from typing import Callable
 import numpy as np
 
 
+# TODO: REVISAR ESSA FUNÇÃO
 def luma() -> Callable:
     ''' Converte a imagem para escala de cinza usando a função luma.
 
