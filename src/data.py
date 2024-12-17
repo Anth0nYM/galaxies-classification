@@ -1,9 +1,9 @@
 from typing import Optional, Callable
 import h5py
-from torch.utils.data import Dataset, DataLoader, random_split
-import torch
-import src.gray as gray
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
+from . import preprocessing
+import torch
 
 
 class Galaxies(Dataset):
@@ -11,6 +11,7 @@ class Galaxies(Dataset):
                  path: str,
                  gray: Optional[Callable[[np.ndarray], np.ndarray]] = None,
                  denoise: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+                 augment: Optional[Callable[[np.ndarray], np.ndarray]] = None
                  ) -> None:
         """Classe que representa o dataset de imagens de galáxias.
 
@@ -24,6 +25,7 @@ class Galaxies(Dataset):
         self.__path = path
         self.__gray = gray
         self.__denoise = denoise
+        self.__augment = augment
 
         try:
             with h5py.File(self.__path, 'r') as f:
@@ -35,7 +37,7 @@ class Galaxies(Dataset):
     def __len__(self) -> int:
         return len(self.__imgs)
 
-    def __getitem__(self, idx: int) -> tuple:
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         if idx >= len(self):
             raise IndexError('Index out of range')
 
@@ -48,15 +50,25 @@ class Galaxies(Dataset):
         if self.__denoise:
             img = self.__denoise(img)
 
-        return img, label
+        if self.__augment:
+            img = self.__augment(img)
+
+        img = img.astype(np.float32) / 255.0  # Normaliza para [0, 1]
+
+        # Converte a imagem e o rótulo para torch.Tensor
+        img_tensor = torch.from_numpy(img).float()
+        label_tensor = torch.tensor(label, dtype=torch.long)
+
+        return img_tensor, label_tensor
 
 
 class GalaxiesDataLoader:
     def __init__(self,
                  path: str,
                  batch_size: int,
-                 as_gray: bool,
-                 denoise: Optional[Callable] = None,
+                 as_gray: bool = True,
+                 denoise: bool = False,
+                 augment: bool = False,
                  seed: int = 0
                  ) -> None:
         """Classe responsável por carregar e dividir o dataset de galáxias em
@@ -67,9 +79,8 @@ class GalaxiesDataLoader:
             batch_size (``int``): Tamanho do lote (batch) para o DataLoader.
             as_gray (``bool``): Se True, converte as imagens para escala de
             cinza.
-            augment (``bool``): Se True, aplica aumentos nas imagens.
-            denoise (``Optional[Callable]``, optional): Função para aplicar
-            remoção de ruído nas imagens.
+            augment (``bool``): Se True, aplica aumento de dados.
+            denoise (``bool``): Se True, aplica remoção de ruído.
             img_size (``tuple[int, int]``, optional): Tamanho das imagens.
                 Defaults to (``256``, ``256``).
             seed (``int``, optional): Semente para geração de números
@@ -77,59 +88,30 @@ class GalaxiesDataLoader:
         """
         self.__path = path
         self.__batch_size = batch_size
-        self.__gray = gray.luma() if as_gray else None
+
+        self.__gray = as_gray
         self.__denoise = denoise
+        self.__augment = augment
         self.__seed = seed
+
+        self.__gray_converter = preprocessing.Make_gray()
+        self.__denoiser = preprocessing.Denoiser()
+
         self.is_gray = True if as_gray else False
         self.is_denoised = True if denoise else False
+        self.is_augmented = True if augment else False
 
-    def split(self,
-              sizes: tuple[int, int, int]
-              ) -> tuple[DataLoader, DataLoader, DataLoader]:
-        """
-        Realiza a divisão do dataset em conjuntos de treino, validação e teste.
-
-        Args:
-            sizes (``tuple[int, int, int]``): Percentagem do tamanho de cada
-            subconjunto (treinamento, validação, teste).
-
-        Returns:
-            ``tuple[DataLoader, DataLoader, DataLoader]``: Conjuntos de treino,
-            validação e teste.
-        """
-        if sum(sizes) != 100:
-            raise ValueError('A soma das porcentagens deve ser 100')
+    def get_dataloader(self):
+        gray = self.__gray_converter.luma if self.__gray else None
+        denoise = self.__denoiser.median if self.__denoise else None
+        augment_pipeline = preprocessing.augment()
 
         dataset = Galaxies(path=self.__path,
-                           gray=self.__gray,
-                           denoise=self.__denoise)
+                           gray=gray,
+                           denoise=denoise,
+                           augment=augment_pipeline)
 
-        n = len(dataset)
-        train_size = int(n * sizes[0] / 100)
-        val_size = int(n * sizes[1] / 100)
-        test_size = n - train_size - val_size
-
-        generator = torch.Generator()
-        generator.manual_seed(self.__seed)
-
-        train_dataset, val_dataset, test_dataset = random_split(
-            dataset=dataset,
-            lengths=[train_size, val_size, test_size],
-            generator=generator)
-
-        train_loader = DataLoader(
-            dataset=train_dataset,
-            batch_size=self.__batch_size,
-            shuffle=True)
-
-        val_loader = DataLoader(
-            dataset=val_dataset,
-            batch_size=self.__batch_size,
-            shuffle=False)
-
-        test_loader = DataLoader(
-            dataset=test_dataset,
-            batch_size=self.__batch_size,
-            shuffle=False)
-
-        return train_loader, val_loader, test_loader
+        dataloader = DataLoader(dataset=dataset,
+                                batch_size=self.__batch_size,
+                                shuffle=True)
+        return dataloader

@@ -1,4 +1,4 @@
-data/
+database/
 .venv/
 draft.py
 mypy.ini
