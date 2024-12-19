@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from . import preprocessing
 import torch
+import albumentations as A
 
 
 class Galaxies(Dataset):
@@ -11,7 +12,8 @@ class Galaxies(Dataset):
                  path: str,
                  gray: Optional[Callable[[np.ndarray], np.ndarray]] = None,
                  denoise: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-                 augment: Optional[Callable[[np.ndarray], np.ndarray]] = None
+                 augment: Optional[A.Compose] = None,
+                 normalize: Optional[A.Compose] = None
                  ) -> None:
         """Classe que representa o dataset de imagens de galáxias.
 
@@ -26,6 +28,7 @@ class Galaxies(Dataset):
         self.__gray = gray
         self.__denoise = denoise
         self.__augment = augment
+        self.__normalize = normalize
 
         try:
             with h5py.File(self.__path, 'r') as f:
@@ -51,15 +54,12 @@ class Galaxies(Dataset):
             img = self.__denoise(img)
 
         if self.__augment:
-            img = self.__augment(img)
+            img = self.__augment(image=img)['image']
 
-        img = img.astype(np.float32) / 255.0  # Normaliza para [0, 1]
+        if self.__normalize:
+            img = self.__normalize(image=img)['image']
 
-        # Converte a imagem e o rótulo para torch.Tensor
-        img_tensor = torch.from_numpy(img).float()
-        label_tensor = torch.tensor(label, dtype=torch.long)
-
-        return img_tensor, label_tensor
+        return img, label
 
 
 class GalaxiesDataLoader:
@@ -69,7 +69,6 @@ class GalaxiesDataLoader:
                  as_gray: bool = True,
                  denoise: bool = False,
                  augment: bool = False,
-                 seed: int = 0
                  ) -> None:
         """Classe responsável por carregar e dividir o dataset de galáxias em
         conjuntos de treino, validação e teste.
@@ -79,12 +78,10 @@ class GalaxiesDataLoader:
             batch_size (``int``): Tamanho do lote (batch) para o DataLoader.
             as_gray (``bool``): Se True, converte as imagens para escala de
             cinza.
-            augment (``bool``): Se True, aplica aumento de dados.
             denoise (``bool``): Se True, aplica remoção de ruído.
+            augment (``bool``): Se True, aplica aumento de dados.
             img_size (``tuple[int, int]``, optional): Tamanho das imagens.
                 Defaults to (``256``, ``256``).
-            seed (``int``, optional): Semente para geração de números
-            aleatórios. Defaults to ``0``.
         """
         self.__path = path
         self.__batch_size = batch_size
@@ -92,10 +89,10 @@ class GalaxiesDataLoader:
         self.__gray = as_gray
         self.__denoise = denoise
         self.__augment = augment
-        self.__seed = seed
 
         self.__gray_converter = preprocessing.Make_gray()
         self.__denoiser = preprocessing.Denoiser()
+        self.__augmenter = preprocessing.Augmenter()
 
         self.is_gray = True if as_gray else False
         self.is_denoised = True if denoise else False
@@ -103,13 +100,15 @@ class GalaxiesDataLoader:
 
     def get_dataloader(self):
         gray = self.__gray_converter.luma if self.__gray else None
-        denoise = self.__denoiser.median if self.__denoise else None
-        augment_pipeline = preprocessing.augment()
+        denoise = self.__denoiser.max if self.__denoise else None
+        augment_pipe = self.__augmenter.augment() if self.__augment else None
+        # normalize_pipe = self.__augmenter.normalize()
 
         dataset = Galaxies(path=self.__path,
                            gray=gray,
                            denoise=denoise,
-                           augment=augment_pipeline)
+                           augment=augment_pipe,
+                           normalize=None)
 
         dataloader = DataLoader(dataset=dataset,
                                 batch_size=self.__batch_size,
