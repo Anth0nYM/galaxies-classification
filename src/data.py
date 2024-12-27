@@ -59,6 +59,9 @@ class Galaxies(Dataset):
         if self.__normalize:
             img = self.__normalize(image=img)['image']
 
+        # img = torch.tensor(img, dtype=torch.float32)
+        # label = torch.tensor(label, dtype=torch.int64)
+
         return img, label
 
 
@@ -106,13 +109,14 @@ class GalaxiesDataLoader:
         gray = self.__gray_converter.luma if self.__gray else None
         denoise = self.__denoiser.max if self.__denoise else None
         augment_pipe = self.__augmenter.augment() if self.__augment else None
-        # normalize_pipe = self.__augmenter.normalize()
+        normalize_pipe = self.__augmenter.normalize()
 
         dataset = Galaxies(path=self.__path,
                            gray=gray,
                            denoise=denoise,
                            augment=augment_pipe,
-                           normalize=None)
+                           normalize=normalize_pipe)
+
         if not self.is_full:
             total_len = len(dataset)
             subset_len = int(total_len * self.__size)
