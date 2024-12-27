@@ -1,6 +1,6 @@
 from typing import Optional, Callable
 import h5py
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, Subset
 import numpy as np
 from . import preprocessing
 import torch
@@ -66,9 +66,10 @@ class GalaxiesDataLoader:
     def __init__(self,
                  path: str,
                  batch_size: int,
+                 size: float = 1.0,
                  as_gray: bool = True,
                  denoise: bool = False,
-                 augment: bool = False,
+                 augment: bool = False
                  ) -> None:
         """Classe responsável por carregar e dividir o dataset de galáxias em
         conjuntos de treino, validação e teste.
@@ -80,11 +81,13 @@ class GalaxiesDataLoader:
             cinza.
             denoise (``bool``): Se True, aplica remoção de ruído.
             augment (``bool``): Se True, aplica aumento de dados.
-            img_size (``tuple[int, int]``, optional): Tamanho das imagens.
-                Defaults to (``256``, ``256``).
+            size (``float``): Proporção do dataset a ser carregada.
+            Defaults to 1.0.
+
         """
         self.__path = path
         self.__batch_size = batch_size
+        self.__size = size
 
         self.__gray = as_gray
         self.__denoise = denoise
@@ -97,6 +100,7 @@ class GalaxiesDataLoader:
         self.is_gray = True if as_gray else False
         self.is_denoised = True if denoise else False
         self.is_augmented = True if augment else False
+        self.is_full = True if size == 1.0 else False
 
     def get_dataloader(self):
         gray = self.__gray_converter.luma if self.__gray else None
@@ -109,6 +113,13 @@ class GalaxiesDataLoader:
                            denoise=denoise,
                            augment=augment_pipe,
                            normalize=None)
+        if not self.is_full:
+            total_len = len(dataset)
+            subset_len = int(total_len * self.__size)
+
+            np.random.seed(0)
+            indices = np.random.choice(total_len, subset_len, replace=False)
+            dataset = Subset(dataset, indices)
 
         dataloader = DataLoader(dataset=dataset,
                                 batch_size=self.__batch_size,
