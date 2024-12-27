@@ -89,7 +89,7 @@ class Augmenter:
              ToTensorV2()
         ])
 
-    def augment(self, p: float = 1.0) -> A.Compose:
+    def augment(self, p: float = 0.15) -> A.Compose:
         return A.Compose([
             A.RandomResizedCrop(height=256, width=256, scale=(0.75, 1.0)),
             A.Rotate(limit=45, p=p),
