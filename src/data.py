@@ -1,39 +1,48 @@
 from typing import Optional, Callable
 import h5py
-from torch.utils.data import Dataset, DataLoader, Subset
+from torch.utils.data import Dataset, DataLoader, Subset, random_split
 import numpy as np
 from . import preprocessing
 import torch
-import albumentations as A
 
 
 class Galaxies(Dataset):
     def __init__(self,
                  path: str,
                  gray: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-                 denoise: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-                 augment: Optional[A.Compose] = None,
-                 normalize: Optional[A.Compose] = None
+                 size: float = 1.0,
                  ) -> None:
-        """Classe que representa o dataset de imagens de galáxias.
+        """Um Dataset customizado do PyTorch para lidar
+        com conjuntos de dados de imagens
+        de galáxias armazenados no formato HDF5.
 
         Args:
-            path (``str``): Caminho para o arquivo base do dataset.
-            gray (``Optional[Callable]``, optional): Função de conversão para
-            cinza.
-            denoise (``Optional[Callable]``, optional): Função para aplicação
-            da remoção de ruído.
+            path (str): Caminho para o arquivo HDF5
+            contendo o conjunto de dados.
+
+            gray (Optional[Callable[[np.ndarray], np.ndarray]]):
+            Função para converter imagenspara escala de cinza.
+            Defaults to None.
+
+            size (float, optional): Proporção do conjunto de dados a ser usada.
+            Defaults to 1.0.
+
+        Raises:
+            FileNotFoundError: Se o arquivo do conjunto de dados especificado
+            não for encontrado.
         """
         self.__path = path
         self.__gray = gray
-        self.__denoise = denoise
-        self.__augment = augment
-        self.__normalize = normalize
+        self.__size = size
 
         try:
             with h5py.File(self.__path, 'r') as f:
-                self.__imgs = f['images'][:]
-                self.__labels = f['labels'][:]
+                total_samples = len(f['images'])
+                num_samples = int(total_samples * self.__size)
+
+                self.__imgs = f['images'][:num_samples]
+                self.__labels = f['labels'][:num_samples]
+
         except FileNotFoundError:
             raise FileNotFoundError('Missing dataset')
 
@@ -50,18 +59,6 @@ class Galaxies(Dataset):
         if self.__gray:
             img = self.__gray(img)
 
-        if self.__denoise:
-            img = self.__denoise(img)
-
-        if self.__augment:
-            img = self.__augment(image=img)['image']
-
-        if self.__normalize:
-            img = self.__normalize(image=img)['image']
-
-        # img = torch.tensor(img, dtype=torch.float32)
-        # label = torch.tensor(label, dtype=torch.int64)
-
         return img, label
 
 
@@ -70,62 +67,84 @@ class GalaxiesDataLoader:
                  path: str,
                  batch_size: int,
                  size: float = 1.0,
+                 seed: int = 0,
                  as_gray: bool = True,
-                 denoise: bool = False,
-                 augment: bool = False
                  ) -> None:
-        """Classe responsável por carregar e dividir o dataset de galáxias em
-        conjuntos de treino, validação e teste.
+        """    Classe para gerenciar o carregamento de dados
+        do conjunto de dados Galaxies.
 
         Args:
-            path (``str``): Caminho para o arquivo base do dataset.
-            batch_size (``int``): Tamanho do lote (batch) para o DataLoader.
-            as_gray (``bool``): Se True, converte as imagens para escala de
-            cinza.
-            denoise (``bool``): Se True, aplica remoção de ruído.
-            augment (``bool``): Se True, aplica aumento de dados.
-            size (``float``): Proporção do dataset a ser carregada.
+            path (str): path (str): Caminho para o arquivo HDF5
+            contendo o conjunto de dados.
+
+            batch_size (int): Tamanho do lote (batch)
+
+            size (float, optional): Fração do conjunto de dados a ser usada.
             Defaults to 1.0.
 
+            seed (int, optional): Semente para reprodução dos splits de dados.
+            Defaults to 0.
+
+            as_gray (bool, optional): Define se as imagens serão convertidas
+            para escala de cinza. Defaults to True.
         """
         self.__path = path
         self.__batch_size = batch_size
         self.__size = size
-
+        self.__seed = seed
         self.__gray = as_gray
-        self.__denoise = denoise
-        self.__augment = augment
-
         self.__gray_converter = preprocessing.Make_gray()
-        self.__denoiser = preprocessing.Denoiser()
-        self.__augmenter = preprocessing.Augmenter()
-
         self.is_gray = True if as_gray else False
-        self.is_denoised = True if denoise else False
-        self.is_augmented = True if augment else False
         self.is_full = True if size == 1.0 else False
 
-    def get_dataloader(self):
+    def __split_dataset(self,
+                        dataset: Galaxies,
+                        split_size: tuple[float, float, float]
+                        ) -> tuple[Subset, Subset, Subset]:
+        """Divide o conjunto de dados em
+        treino, validação e teste.
+
+        Args:
+            dataset (Galaxies): Conjunto de dados a ser dividido.
+            split_size (tuple[float, float, float]): Proporção de divisão.
+
+        Returns:
+            tuple[Subset, Subset, Subset]: Os 3 conjuntos criados.
+        """
+        total_size = len(dataset)
+        train_size = int(total_size * split_size[0])
+        val_size = int(total_size * split_size[1])
+        test_size = total_size - train_size - val_size
+
+        generator = torch.Generator().manual_seed(self.__seed)
+
+        train_dataset, val_dataset, test_dataset = random_split(
+            dataset=dataset,
+            lengths=[train_size, val_size, test_size],
+            generator=generator)
+
+        return train_dataset, val_dataset, test_dataset
+
+    def split(self,
+              sizes: tuple[float, float, float] = (0.8, 0.1, 0.1)
+              ) -> tuple[DataLoader, DataLoader, DataLoader]:
+        """Divide o dataloader em treino, validação e teste.
+
+        Args:
+            split_size (tuple[float, float, float]): Proporção para cada split.
+            Defaults to (0.8, 0.1, 0.1).
+
+        Returns:
+            tuple[DataLoader, DataLoader, DataLoader]: Dataloaders criados.
+        """
         gray = self.__gray_converter.luma if self.__gray else None
-        denoise = self.__denoiser.max if self.__denoise else None
-        augment_pipe = self.__augmenter.augment() if self.__augment else None
-        normalize_pipe = self.__augmenter.normalize()
+        dataset = Galaxies(path=self.__path, gray=gray, size=self.__size)
 
-        dataset = Galaxies(path=self.__path,
-                           gray=gray,
-                           denoise=denoise,
-                           augment=augment_pipe,
-                           normalize=normalize_pipe)
+        train, val, test = self.__split_dataset(
+            dataset=dataset, split_size=sizes)
 
-        if not self.is_full:
-            total_len = len(dataset)
-            subset_len = int(total_len * self.__size)
+        train_loader = DataLoader(dataset=train, batch_size=self.__batch_size)
+        val_loader = DataLoader(dataset=val, batch_size=self.__batch_size)
+        test_loader = DataLoader(dataset=test, batch_size=self.__batch_size)
 
-            np.random.seed(0)
-            indices = np.random.choice(total_len, subset_len, replace=False)
-            dataset = Subset(dataset, indices)
-
-        dataloader = DataLoader(dataset=dataset,
-                                batch_size=self.__batch_size,
-                                shuffle=True)
-        return dataloader
+        return train_loader, val_loader, test_loader
