@@ -1,38 +1,49 @@
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score
+import torch
+from torchmetrics.classification import (
+    BinaryAccuracy,
+    BinaryPrecision,
+    BinaryRecall,
+    BinaryF1Score,
 )
-
-import numpy as np
 
 
 class Metrics:
-    def __init__(self) -> None:
-        self.__metrics = {
-            "accuracy": accuracy_score,
-            "precision": precision_score,
-            "recall": recall_score,
-            "f1": f1_score,
+    def __init__(self,
+                 device: torch.device
+                 ) -> None:
+        """
+        Inicializa a classe Metrics com o dispositivo especificado.
+
+        Args:
+            device (torch.device): O dispositivo (CPU ou GPU) onde as métricas
+            serão calculadas.
+        """
+        self.__device = device
+        self.funcs = {
+            "accuracy": BinaryAccuracy().to(device=self.__device),
+            "precision": BinaryPrecision().to(device=self.__device),
+            "recall": BinaryRecall().to(device=self.__device),
+            "f1": BinaryF1Score().to(device=self.__device),
         }
 
     def report(self,
-               yt: np.ndarray,
-               yp: np.ndarray
+               yt: torch.Tensor,
+               yp: torch.Tensor,
+               threshold: float = 0.5
                ) -> dict[str, float]:
         """
         Calcula e retorna as métricas de avaliação.
 
         Args:
-            yt (``np.ndarray``): Rótulos verdadeiros.
-            yp (``np.ndarray``): Rótulos previstos.
+            yt (``torch.Tensor``): Rótulos verdadeiros (binários).
+            yp (``torch.Tensor``): Rótulos previstos (binários).
 
         Returns:
             dict: Dicionário com os nomes das métricas e seus valores.
         """
         reports = {}
-        for metric_name, metric_func in self.__metrics.items():
-            reports[metric_name] = metric_func(yt, yp)
+        yp_bin = (yp > threshold).int()
+        for metric_name, metric_func in self.funcs.items():
+            reports[metric_name] = metric_func(yp_bin, yt).item()
 
         return reports

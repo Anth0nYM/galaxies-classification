@@ -5,6 +5,9 @@ import numpy as np
 from . import preprocessing
 import torch
 
+# TODO: reorganizar a base de dados incluindo o split como um atributo
+# TODO: Fazer a classe de pre-processamento e aplicar
+
 
 class Galaxies(Dataset):
     def __init__(self,
