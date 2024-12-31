@@ -7,6 +7,7 @@ import numpy as np
 
 if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using {DEVICE}')
     BATCH_SIZE = 1
     PATH = 'database/Binary_2_5_dataset.h5'
     epoch = 0
