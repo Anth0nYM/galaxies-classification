@@ -15,8 +15,8 @@ if __name__ == "__main__":
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
         batch_size=BATCH_SIZE,
-        size=0.1,
-        as_gray=False)
+        as_gray=False,
+        size=0.1)
 
     train, val, test = dataloader.split()
 

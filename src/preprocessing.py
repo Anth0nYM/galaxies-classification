@@ -2,27 +2,57 @@ import cv2
 import numpy as np
 from scipy import ndimage
 import albumentations as A
+import torch
 
 
-class Make_gray:
-    def __init__(self):
-        pass
+def normalize(img: np.ndarray,
+              label: np.ndarray
+              ) -> tuple[torch.Tensor, torch.Tensor]:
+    """Normaliza a imagem.
 
-    def luma(self, img: np.ndarray) -> np.ndarray:
-        """Aplica a transformação Luma.
+    Args:
+        image (np.ndarray): Imagem a ser normalizada.
 
-        Args:
-            img (np.ndarray): imagem colorida.
-        Returns:
-            np.ndarray: imagem em escala de cinza.
-        """
-        img_gray = (
-            0.2126 * img[..., 0] +
-            0.7152 * img[..., 1] +
-            0.0722 * img[..., 2]
-        ).astype(np.uint8)
+    Returns:
+        torch.Tensor: Imagem normalizada.
+    """
+    img_tensor = torch.from_numpy(img)
+    img_tensor = img_tensor.permute(0, 3, 1, 2)
+    img_tensor = img_tensor.float() / 255.0
 
-        return img_gray
+    label_tensor = torch.from_numpy(label)
+    label_tensor = label_tensor.view(-1, 1).float()
+
+    return img_tensor, label_tensor
+
+
+def luma(img: np.ndarray) -> np.ndarray:
+    """Aplica a transformação Luma.
+
+    Args:
+        img (np.ndarray): imagem colorida.
+    Returns:
+        np.ndarray: imagem em escala de cinza.
+    """
+    img_gray = (
+        0.2126 * img[..., 0] +
+        0.7152 * img[..., 1] +
+        0.0722 * img[..., 2])
+
+    return img_gray
+
+
+def augment(p: float = 0.15) -> A.Compose:
+    return A.Compose([
+        A.RandomResizedCrop(height=256, width=256, scale=(0.75, 1.0)),
+        A.Rotate(limit=45, p=p),
+        A.HorizontalFlip(p=p),
+        A.VerticalFlip(p=p),
+        A.ShiftScaleRotate(shift_limit=0.05,
+                           scale_limit=0,
+                           rotate_limit=0,
+                           p=p),
+    ])
 
 
 class Denoiser:
@@ -73,27 +103,3 @@ class Denoiser:
         """Filtro máximo."""
         return ndimage.maximum_filter(
             image, size=self.__kernel_size)
-
-
-class Augmenter:
-    def __init__(self):
-        pass
-
-    def normalize(self) -> A.Compose:
-        return A.Compose([
-
-             A.Normalize(mean=(0.485, 0.456, 0.406),
-                         std=(0.229, 0.224, 0.225)),
-        ])
-
-    def augment(self, p: float = 0.15) -> A.Compose:
-        return A.Compose([
-            A.RandomResizedCrop(height=256, width=256, scale=(0.75, 1.0)),
-            A.Rotate(limit=45, p=p),
-            A.HorizontalFlip(p=p),
-            A.VerticalFlip(p=p),
-            A.ShiftScaleRotate(shift_limit=0.05,
-                               scale_limit=0,
-                               rotate_limit=0,
-                               p=p),
-        ])
