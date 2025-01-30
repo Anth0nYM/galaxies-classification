@@ -3,7 +3,7 @@ from typing import Optional
 
 class EsMonitor:
     def __init__(self,
-                 patience: int = 10,
+                 patience: int = 20,
                  min_delta: float = 0.0
                  ) -> None:
         """
@@ -17,7 +17,7 @@ class EsMonitor:
         """
         self.__patience = patience
         self.__min_delta = min_delta
-        self.__wait = 0
+        self.wait = 0
         self.__best_loss: Optional[float] = None
         self.__stop_training = False
 
@@ -34,14 +34,14 @@ class EsMonitor:
         if self.__best_loss is None:
             self.__best_loss = loss
         elif loss > self.__best_loss - self.__min_delta:
-            self.__wait += 1
-            if self.__wait >= self.__patience:
+            self.wait += 1
+            if self.wait >= self.__patience:
                 self.__stop_training = True
         else:
             self.__best_loss = loss
-            self.__wait = 0
+            self.wait = 0
 
-        return self.__wait
+        return self.wait
 
     def must_stop(self) -> bool:
         """
