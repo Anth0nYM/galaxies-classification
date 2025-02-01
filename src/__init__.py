@@ -4,6 +4,7 @@ from .metrics.report import ClassificationReport
 from .metrics.classification.cm import ConfusionMatrix
 from .monitor.es import EsMonitor
 from .logging.tb import TbLog
+from .data.pp.denoise import Denoiser
 
 __all__ = [
     "GalaxiesDataLoader",
@@ -11,5 +12,6 @@ __all__ = [
     "ClassificationReport",
     "ConfusionMatrix",
     "EsMonitor",
-    "TbLog"
+    "TbLog",
+    "Denoiser"
     ]

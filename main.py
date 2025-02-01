@@ -11,12 +11,14 @@ if __name__ == "__main__":
     BATCH_SIZE = 32
     PATH = 'database/Binary_2_5_dataset.h5'
     EPOCH_LIMIT = 1000
+    denoise = src.Denoiser().mean
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
         batch_size=BATCH_SIZE,
         as_gray=False,
         augment=False,
+        denoise=denoise,
         size=1)
 
     train, val, test = dataloader.split()
