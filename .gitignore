@@ -3,6 +3,7 @@ database/
 draft.py
 mypy.ini
 view.py
+logs/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

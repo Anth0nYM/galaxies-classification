@@ -31,6 +31,11 @@ if __name__ == "__main__":
                                                     patience=10,
                                                     cooldown=5)
 
+    logger = src.TbLog(comment="teste")
+
+    aug_flag = "ativado" if dataloader.is_augmented else "desativado"
+    logger.log_text(f"O aumento de dados está {aug_flag}")
+
     for epoch in range(EPOCH_LIMIT):
 
         # Train
@@ -53,16 +58,25 @@ if __name__ == "__main__":
             train_run_metrics.append(metrics_report.get_report())
             train_run_loss.append(train_loss.item())
 
+        # Logging
         avg_train_metrics = {
-            key: np.mean(
+            key: float(np.mean(
                 [
                     m[key] for m in train_run_metrics
-                    ]
+                    ])
                 ) for key in train_run_metrics[0]}
 
         avg_train_loss = np.mean(train_run_loss)
-        print(f"Epoch {epoch} - Train Loss: {avg_train_loss:.4f}, "
-              f"Metrics: {avg_train_metrics}")
+
+        logger.log_metircs(
+            split="train",
+            epoch=epoch,
+            loss=avg_train_loss,
+            metrics=avg_train_metrics)
+
+        #  logger.log_images
+
+        print(f"Epoch {epoch} - Train Loss: {avg_train_loss:.4f}, ")
 
         # Validação
         with torch.no_grad():
@@ -83,19 +97,27 @@ if __name__ == "__main__":
                 val_run_metrics.append(metrics_report.get_report())
                 val_run_loss.append(val_loss.item())
 
+            # Logging
             avg_val_metrics = {
-                key: np.mean(
+                key: float(np.mean(
                     [
                         m[key] for m in val_run_metrics
-                        ]
+                        ])
                     ) for key in val_run_metrics[0]}
 
             avg_val_loss = np.mean(val_run_loss)
-            print(f"Epoch {epoch} - Validation Loss: {avg_val_loss:.4f}, "
-                  f"Metrics: {avg_val_metrics}")
+            logger.log_metircs(
+                split="val",
+                epoch=epoch,
+                loss=avg_val_loss,
+                metrics=avg_val_metrics)
+
+            #  logger.log_images
+
+            print(f"Validation Loss: {avg_val_loss:.4f}, ")
 
             # Early stopping and Lr adjust
-            lr_sched.step(np.mean(val_run_loss))
+            lr_sched.step(avg_val_loss)
             es(avg_val_loss)
             print(f"Current wait: {es.wait}")
             if es.must_stop():
@@ -128,6 +150,11 @@ if __name__ == "__main__":
             print(f"{key.capitalize()}: {value:.4f}")
 
         # Exibir matriz de confusão final
-        print("\n🔥🔥🔥 Final Confusion Matrix 🔥🔥🔥\n")
-        for key, value in cm.items():
-            print(f"{key.upper()}: {value}")
+        logger.log_cm(cm=cm, epoch=epoch)
+        logger.log_metircs(
+            split="test",
+            epoch=epoch,
+            loss=0.0,
+            metrics=final_metrics_report
+            )
+        logger.close()
