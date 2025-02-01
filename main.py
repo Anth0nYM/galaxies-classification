@@ -6,18 +6,21 @@ from tqdm import tqdm
 import numpy as np
 
 if __name__ == "__main__":
+    AUGMENT = False
+    denoise = src.Denoiser().mean
+    denoise_name = denoise.__name__
+
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using {DEVICE}')
     BATCH_SIZE = 32
     PATH = 'database/Binary_2_5_dataset.h5'
     EPOCH_LIMIT = 1000
-    denoise = src.Denoiser().mean
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
         batch_size=BATCH_SIZE,
         as_gray=False,
-        augment=False,
+        augment=AUGMENT,
         denoise=denoise,
         size=1)
 
@@ -33,7 +36,7 @@ if __name__ == "__main__":
                                                     patience=10,
                                                     cooldown=5)
 
-    logger = src.TbLog(comment="teste")
+    logger = src.TbLog(comment=f"{denoise_name}{AUGMENT}")
 
     aug_flag = "ativado" if dataloader.is_augmented else "desativado"
     logger.log_text(f"O aumento de dados está {aug_flag}")
