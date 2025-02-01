@@ -8,16 +8,16 @@ import numpy as np
 if __name__ == "__main__":
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using {DEVICE}')
-    BATCH_SIZE = 1
+    BATCH_SIZE = 32
     PATH = 'database/Binary_2_5_dataset.h5'
-    EPOCH_LIMIT = 1
+    EPOCH_LIMIT = 1000
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
         batch_size=BATCH_SIZE,
         as_gray=False,
         augment=False,
-        size=0.1)
+        size=1)
 
     train, val, test = dataloader.split()
 

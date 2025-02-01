@@ -8,15 +8,20 @@ class TbLog:
                  comment: str,
                  log_dir: str = "logs/",
                  ) -> None:
-        """Classe responsável por logar os resultados de um experimento no TensorBoard.
+        """Classe responsável por logar os resultados de um experimento.
 
         Args:
-            comment (str): Comentário a ser adicionado ao nome do diretório de logs.
-            log_dir (str, optional): Caminho base para armazenar os logs. 
+            comment (str): Comentário a ser adicionado
+            ao nome do diretório de logs.
+
+            log_dir (str, optional): Caminho base para armazenar os logs.
                                      Padrão é "logs/".
         """
         self.__git = Git(repo_path=".")
-        self.__log_dir = f"{log_dir}{self.__git._get_hex()}{comment}\{self.__git._get_timestamp()}"
+        self.__log_dir = (
+            f"{log_dir}{self.__git._get_hex()}{comment}/"
+            f"{self.__git._get_timestamp()}"
+        )
 
         self.__writer = SummaryWriter(log_dir=self.__log_dir)
         self.__drawer = Drawer()
@@ -60,21 +65,21 @@ class TbLog:
         Registra as métricas de classificação e a perda no TensorBoard.
 
         Args:
-            split (str): Nome do conjunto de dados (ex: "train", "val", "test").
+            split (str): Divisão do conjunto de dados.
             epoch (int): Número da época em que os dados foram registrados.
             loss (float): Valor da perda a ser registrado.
-            metrics (dict[str, float]): Dicionário contendo métricas de classificação.
+            metrics (dict[str, float]): Dicionário contendo métricas.
         """
         self.__log_loss(loss_split=split, loss_epoch=epoch, loss_value=loss)
         self.__log_classificatrion_metrics(
             metrics_split=split, metrics_epoch=epoch, metrics_dict=metrics
             )
-    
+
     def close(self
               ) -> None:
         """
         Fecha o escritor do TensorBoard.
-        """       
+        """
         self.__writer.close()
 
     def __log_loss(self,
@@ -86,7 +91,7 @@ class TbLog:
         Registra o valor da perda no TensorBoard.
 
         Args:
-            loss_split (str): Nome do conjunto de dados (ex: "train", "val", "test").
+            loss_split (str): Nome da divisão de dados.
             loss_epoch (int): Época em que a perda foi registrada.
             loss_value (float): Valor da perda.
         """
@@ -101,9 +106,9 @@ class TbLog:
         Registra métricas de classificação no TensorBoard.
 
         Args:
-            metrics_split (str): Nome do conjunto de dados (ex: "train", "val", "test").
+            metrics_split (str): Nome da divisão de dados.
             metrics_epoch (int): Época em que as métricas foram registradas.
-            metrics_dict (dict[str, float]): Dicionário contendo métricas de classificação.
+            metrics_dict (dict[str, float]): Dicionário contendo métricas.
         """
         for name, value in metrics_dict.items():
             self.__writer.add_scalar(
