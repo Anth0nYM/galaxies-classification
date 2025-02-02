@@ -17,7 +17,7 @@ if __name__ == "__main__":
     print(f'Using {DEVICE}')
     BATCH_SIZE = 64
     PATH = 'database/Binary_2_5_dataset.h5'
-    EPOCH_LIMIT = 1000
+    EPOCH_LIMIT = 0
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
         avg_train_loss = np.mean(train_run_loss)
 
-        logger.log_metircs(
+        logger.log_metrics(
             split="train",
             epoch=epoch,
             loss=avg_train_loss,
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                     ) for key in val_run_metrics[0]}
 
             avg_val_loss = np.mean(val_run_loss)
-            logger.log_metircs(
+            logger.log_metrics(
                 split="val",
                 epoch=epoch,
                 loss=avg_val_loss,
@@ -137,6 +137,8 @@ if __name__ == "__main__":
         model.eval()
         y_trues = []
         y_preds = []
+        fn_samples = []
+        fp_samples = []
 
         for img, label in tqdm(test, desc="Test"):
             img, label = img.to(DEVICE), label.to(DEVICE)
@@ -144,6 +146,19 @@ if __name__ == "__main__":
 
             y_trues.append(label.cpu().detach().round())
             y_preds.append(output.cpu().detach().round())
+
+            y_true_batch = label.cpu().detach().round()
+            y_pred_batch = output.cpu().detach().round()
+
+            for i in range(img.size(0)):
+                true_val = y_true_batch[i].item()
+                pred_val = y_pred_batch[i].item()
+
+                if true_val == 1 and pred_val == 0:
+                    fn_samples.append((img[i].cpu(), true_val, pred_val))
+
+                elif true_val == 0 and pred_val == 1:
+                    fp_samples.append((img[i].cpu(), true_val, pred_val))
 
         all_y_trues = torch.cat(y_trues, dim=0)
         all_y_preds = torch.cat(y_preds, dim=0)
@@ -158,11 +173,17 @@ if __name__ == "__main__":
             print(f"{key.capitalize()}: {value:.4f}")
 
         # Exibir matriz de confusão final
+        # ! REMOVE THIS
+        epoch = 1
         logger.log_cm(cm=cm, epoch=epoch)
-        logger.log_metircs(
+        logger.log_metrics(
             split="test",
             epoch=epoch,
             loss=0.0,
             metrics=final_metrics_report
             )
+
+        logger.log_imgs(fns=fn_samples,
+                        fps=fp_samples,
+                        epoch=epoch)
         logger.close()

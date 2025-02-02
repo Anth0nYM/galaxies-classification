@@ -1,6 +1,7 @@
 from src.logging.git import Git
 from torch.utils.tensorboard import SummaryWriter
 from src.logging.draw import Drawer
+import torch
 
 
 class TbLog:
@@ -55,7 +56,7 @@ class TbLog:
             global_step=epoch
         )
 
-    def log_metircs(self,
+    def log_metrics(self,
                     split: str,
                     epoch: int,
                     loss: float,
@@ -75,12 +76,53 @@ class TbLog:
             metrics_split=split, metrics_epoch=epoch, metrics_dict=metrics
             )
 
+    def log_imgs(self,
+                 fns: list,
+                 fps: list,
+                 epoch: int
+                 ) -> None:
+        """_summary_
+
+        Args:
+            fns (list[torch.Tensor]): _description_
+            fps (list[torch.Tensor]): _description_
+            epoch (int): _description_
+        """
+        fns_grid = self.__drawer._draw_grid(fns)
+        fps_grid = self.__drawer._draw_grid(fps)
+        self.__log_grid(grid=fns_grid,
+                        tag="Falsos Negativos",
+                        epoch=epoch)
+
+        self.__log_grid(grid=fps_grid,
+                        tag="Falsos Positivos",
+                        epoch=epoch)
+
     def close(self
               ) -> None:
         """
         Fecha o escritor do TensorBoard.
         """
         self.__writer.close()
+
+    def __log_grid(self,
+                   grid: torch.Tensor,
+                   tag: str,
+                   epoch: int
+                   ) -> None:
+        """_summary_
+
+        Args:
+            grid (torch.Tensor): _description_
+            tag (str): _description_
+            epoch (int): _description_
+        """
+        if grid.numel() == 0:
+            print(f"Aviso: Nenhuma imagem para logar para {tag}.")
+        else:
+            self.__writer.add_image(
+                tag=tag, img_tensor=grid, global_step=epoch
+                )
 
     def __log_loss(self,
                    loss_split: str,
