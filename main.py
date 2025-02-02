@@ -17,7 +17,7 @@ if __name__ == "__main__":
     print(f'Using {DEVICE}')
     BATCH_SIZE = 64
     PATH = 'database/Binary_2_5_dataset.h5'
-    EPOCH_LIMIT = 0
+    EPOCH_LIMIT = 1000
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
@@ -173,8 +173,6 @@ if __name__ == "__main__":
             print(f"{key.capitalize()}: {value:.4f}")
 
         # Exibir matriz de confusão final
-        # ! REMOVE THIS
-        epoch = 1
         logger.log_cm(cm=cm, epoch=epoch)
         logger.log_metrics(
             split="test",
