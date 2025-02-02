@@ -5,21 +5,24 @@ import torch.optim as optim
 from tqdm import tqdm
 import numpy as np
 
+# TODO: ler sobre logging compartilhado no tensorboard
+
 if __name__ == "__main__":
     AUGMENT = False
     denoise = src.Denoiser().mean
+    GRAY = True
     denoise_name = denoise.__name__
 
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using {DEVICE}')
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     PATH = 'database/Binary_2_5_dataset.h5'
     EPOCH_LIMIT = 1000
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
         batch_size=BATCH_SIZE,
-        as_gray=False,
+        as_gray=GRAY,
         augment=AUGMENT,
         denoise=denoise,
         size=1)
@@ -33,10 +36,10 @@ if __name__ == "__main__":
     optimizer = optim.Adam(params=model.parameters(), lr=0.001)
     lr_sched = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
                                                     mode='min',
-                                                    patience=10,
-                                                    cooldown=5)
+                                                    patience=5,
+                                                    cooldown=3)
 
-    logger = src.TbLog(comment=f"{denoise_name}{AUGMENT}")
+    logger = src.TbLog(comment=f"_{denoise_name}_aug{AUGMENT}_gray{GRAY}")
 
     aug_flag = "ativado" if dataloader.is_augmented else "desativado"
     logger.log_text(f"O aumento de dados está {aug_flag}")

@@ -3,7 +3,7 @@ from typing import Optional
 
 class EsMonitor:
     def __init__(self,
-                 patience: int = 20,
+                 patience: int = 10,
                  min_delta: float = 0.0
                  ) -> None:
         """

@@ -40,6 +40,7 @@ class Normalize:
         img_normalized = torch.from_numpy(img_to_norm).float()
         if self.__is_gray:
             img_normalized = img_normalized.unsqueeze(0)
+            img_normalized = img_normalized.repeat(3, 1, 1)
         else:
             img_normalized = img_normalized.permute(2, 0, 1)
 
