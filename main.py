@@ -5,12 +5,10 @@ import torch.optim as optim
 from tqdm import tqdm
 import numpy as np
 
-# TODO: ler sobre logging compartilhado no tensorboard
-
 if __name__ == "__main__":
     AUGMENT = False
     denoise = src.Denoiser().mean
-    GRAY = True
+    GRAY = False
     denoise_name = denoise.__name__
 
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -82,8 +80,6 @@ if __name__ == "__main__":
             loss=avg_train_loss,
             metrics=avg_train_metrics)
 
-        #  logger.log_images
-
         print(f"Epoch {epoch} - Train Loss: {avg_train_loss:.4f}, ")
 
         # Validação
@@ -119,8 +115,6 @@ if __name__ == "__main__":
                 epoch=epoch,
                 loss=avg_val_loss,
                 metrics=avg_val_metrics)
-
-            #  logger.log_images
 
             print(f"Validation Loss: {avg_val_loss:.4f}, ")
 
@@ -172,7 +166,6 @@ if __name__ == "__main__":
         for key, value in final_metrics_report.items():
             print(f"{key.capitalize()}: {value:.4f}")
 
-        # Exibir matriz de confusão final
         logger.log_cm(cm=cm, epoch=epoch)
         logger.log_metrics(
             split="test",
