@@ -7,9 +7,9 @@ import numpy as np
 
 if __name__ == "__main__":
     AUGMENT = False
-    denoise = None
+    denoise = src.Denoiser().mean
     GRAY = False
-    denoise_name = "None"
+    denoise_name = denoise.__name__
 
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using {DEVICE}')

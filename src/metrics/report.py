@@ -2,6 +2,7 @@ import src.metrics.classification as c
 import torch
 
 
+# TODO clf report sklearn implments here
 class ClassificationReport:
     def __init__(self,
                  yt: torch.Tensor,
