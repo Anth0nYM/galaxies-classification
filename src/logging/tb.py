@@ -27,16 +27,19 @@ class TbLog:
         self.__writer = SummaryWriter(log_dir=self.__log_dir)
         self.__drawer = Drawer()
 
-    def log_text(self,
-                 text: str
-                 ) -> None:
+    def log_report(self,
+                   report: str
+                   ) -> None:
         """
-        Registra um texto no TensorBoard.
+        Registra o relatório final no TensorBoard.
 
         Args:
             text (str): Texto a ser registrado.
         """
-        self.__writer.add_text("Detalhes do experimento", text)
+        report_literal = f"```\n{report}\n```"
+        self.__writer.add_text(
+            "Relatório Final para o conjunto de teste", report_literal
+        )
 
     def log_cm(self,
                cm: dict[str, int],

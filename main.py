@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 import numpy as np
+from sklearn.metrics import classification_report
+
 
 if __name__ == "__main__":
     AUGMENT = False
@@ -15,7 +17,7 @@ if __name__ == "__main__":
     print(f'Using {DEVICE}')
     BATCH_SIZE = 64
     PATH = 'database/Binary_2_5_dataset.h5'
-    EPOCH_LIMIT = 1000
+    EPOCH_LIMIT = 2
 
     dataloader = src.GalaxiesDataLoader(
         path=PATH,
@@ -23,7 +25,7 @@ if __name__ == "__main__":
         as_gray=GRAY,
         augment=AUGMENT,
         denoise=denoise,
-        size=1)
+        size=0.1)
 
     train, val, test = dataloader.split()
 
@@ -38,10 +40,6 @@ if __name__ == "__main__":
                                                     cooldown=3)
 
     logger = src.TbLog(comment=f"_{denoise_name}_aug{AUGMENT}_gray{GRAY}")
-
-    aug_flag = "ativado" if dataloader.is_augmented else "desativado"
-    logger.log_text(f"O aumento de dados está {aug_flag}")
-
     for epoch in range(EPOCH_LIMIT):
 
         # Train
@@ -157,23 +155,9 @@ if __name__ == "__main__":
         all_y_trues = torch.cat(y_trues, dim=0)
         all_y_preds = torch.cat(y_preds, dim=0)
         cm = src.ConfusionMatrix(all_y_trues, all_y_preds).get_full_matrix()
-        final_metrics_report = src.ClassificationReport(
-            all_y_trues,
-            all_y_preds
-            ).get_report()
-
-        print("\n🔥🔥🔥 Test Metrics Summary 🔥🔥🔥\n")
-        for key, value in final_metrics_report.items():
-            print(f"{key.capitalize()}: {value:.4f}")
-
+        test_report = classification_report(y_true, y_pred, zero_division=0)
+        logger.log_report(report=test_report)
         logger.log_cm(cm=cm, epoch=epoch)
-        logger.log_metrics(
-            split="test",
-            epoch=epoch,
-            loss=0.0,
-            metrics=final_metrics_report
-            )
-
         logger.log_imgs(fns=fn_samples,
                         fps=fp_samples,
                         epoch=epoch)
